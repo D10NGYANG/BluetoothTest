@@ -10,13 +10,18 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.os.Message;
 import android.support.v4.app.ActivityCompat;
+import android.support.v4.widget.DrawerLayout;
 import android.support.v4.widget.SwipeRefreshLayout;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.Gravity;
+import android.view.MenuItem;
 import android.view.View;
+import android.widget.AbsListView;
 import android.widget.AdapterView;
 import android.widget.Button;
+import android.widget.FrameLayout;
 import android.widget.ListView;
 import android.widget.SimpleAdapter;
 import android.widget.TextView;
@@ -42,6 +47,7 @@ public class MainActivity extends AppCompatActivity {
     public ListView Bluelist;
     public Button BTN_send;
     public SwipeRefreshLayout refresh_blulist;
+    public DrawerLayout drawerLayout;
     public SimpleAdapter adapter;
     public ArrayList<Map<String,String>> list= new ArrayList<Map<String,String>>();
     public BluetoothAdapter bluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
@@ -51,9 +57,25 @@ public class MainActivity extends AppCompatActivity {
     private ConnectedThread connectedThread = null;
 
     @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        switch (item.getItemId()) {
+            case android.R.id.home:
+                // 如果没有打开，就去打开
+                if (!drawerLayout.isDrawerOpen(Gravity.LEFT)) {
+                    drawerLayout.openDrawer(Gravity.LEFT);
+                }
+                break;
+        }
+        return super.onOptionsItemSelected(item);
+    }
+
+    @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
+        getSupportActionBar().setDisplayHomeAsUpEnabled(true);
+
         //注册控件
         textView = (TextView)findViewById(R.id.textView);
         BTN_close = (Button)findViewById(R.id.BTN_close);
@@ -61,6 +83,7 @@ public class MainActivity extends AppCompatActivity {
         something = (TextView)findViewById(R.id.something);
         BTN_send = (Button)findViewById(R.id.BTN_send);
         refresh_blulist = (SwipeRefreshLayout)findViewById(R.id.refresh_blulist);
+        drawerLayout = (DrawerLayout) findViewById(R.id.drawer_layout);
         context = getApplicationContext();
         //注册广播接收
         IntentFilter intentFilter = new IntentFilter();
@@ -94,6 +117,25 @@ public class MainActivity extends AppCompatActivity {
                     }
                 }
                 SeeOldBlueDevices();
+            }
+        });
+
+        Bluelist.setOnScrollListener(new AbsListView.OnScrollListener() {
+            @Override
+            public void onScrollStateChanged(AbsListView absListView, int i) {
+
+            }
+
+            @Override
+            public void onScroll(AbsListView absListView, int i, int i1, int i2) {
+                View firstView = absListView.getChildAt(i);
+                if(i == 0 && (firstView == null || firstView.getTop() == 0)) {
+                    /*上滑到listView的顶部时，下拉刷新组件可见*/
+                    refresh_blulist.setEnabled(true);
+                } else {
+                    /*不是listView的顶部时，下拉刷新组件不可见*/
+                    refresh_blulist.setEnabled(false);
+                }
             }
         });
         //点击列表事件
